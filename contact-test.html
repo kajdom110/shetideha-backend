@@ -1,0 +1,36 @@
+<!DOCTYPE html>
+<html lang="fa" dir="rtl">
+<head>
+  <meta charset="UTF-8">
+  <title>تست فرم تماس</title>
+</head>
+<body>
+  <h1>فرم تماس (تستی)</h1>
+  <form id="contactForm">
+    <p><label>نام: <input type="text" id="name" required></label></p>
+    <p><label>ایمیل: <input type="email" id="email" required></label></p>
+    <p><label>پیام: <textarea id="message" required></textarea></label></p>
+    <button type="submit">ارسال</button>
+  </form>
+  <p id="result"></p>
+
+  <script>
+    document.getElementById('contactForm').addEventListener('submit', function (e) {
+      e.preventDefault();
+      const name = document.getElementById('name').value;
+      const email = document.getElementById('email').value;
+      const message = document.getElementById('message').value;
+
+      fetch('http://127.0.0.1:5000/api/contact', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ name: name, email: email, message: message })
+      })
+        .then(function (response) { return response.json(); })
+        .then(function (data) {
+          document.getElementById('result').textContent = data.message;
+        });
+    });
+  </script>
+</body>
+</html>

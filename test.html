@@ -1,0 +1,26 @@
+<!DOCTYPE html>
+<html lang="fa" dir="rtl">
+<head>
+  <meta charset="UTF-8">
+  <title>تست اتصال به بک‌اند</title>
+</head>
+<body>
+  <h1>لیست خدمات (از بک‌اند)</h1>
+  <ul id="services-list"></ul>
+
+  <script>
+    fetch('http://127.0.0.1:5000/api/services')
+      .then(function (response) {
+        return response.json();
+      })
+      .then(function (data) {
+        const list = document.getElementById('services-list');
+        data.forEach(function (service) {
+          const item = document.createElement('li');
+          item.textContent = service.name + ' — ' + service.description;
+          list.appendChild(item);
+        });
+      });
+  </script>
+</body>
+</html>
