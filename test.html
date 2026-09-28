@@ -9,7 +9,7 @@
   <ul id="services-list"></ul>
 
   <script>
-    fetch('http://127.0.0.1:5000/api/services')
+    fetch('http://127.0.0.1:5001/api/services')
       .then(function (response) {
         return response.json();
       })
@@ -17,7 +17,7 @@
         const list = document.getElementById('services-list');
         data.forEach(function (service) {
           const item = document.createElement('li');
-          item.textContent = service.name + ' — ' + service.description;
+          item.textContent = service.title + ' — ' + service.description;
           list.appendChild(item);
         });
       });

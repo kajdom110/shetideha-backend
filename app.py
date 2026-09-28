@@ -21,10 +21,36 @@ def init_db():
             message TEXT
         )
     ''')
+    conn.execute('''
+        CREATE TABLE IF NOT EXISTS services (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            title TEXT,
+            description TEXT
+        )
+    ''')
+
+    # Seed the services that used to be hard-coded, only if the table is empty
+    count = conn.execute('SELECT COUNT(*) FROM services').fetchone()[0]
+    if count == 0:
+        conn.executemany(
+            'INSERT INTO services (title, description) VALUES (?, ?)',
+            [
+                ('شت اول', 'توضیح خدمت اول'),
+                ('شت دوم', 'توضیح خدمت دوم'),
+                ('شت سوم', 'توضیح خدمت سوم')
+            ]
+        )
+
     conn.commit()
     conn.close()
 
 init_db()
+
+def is_admin():
+    admin_token = os.environ.get('ADMIN_TOKEN')
+    sent_token = request.headers.get('X-Admin-Token')
+    # If ADMIN_TOKEN isn't set, deny everyone instead of letting a missing header match it
+    return bool(admin_token and sent_token and hmac.compare_digest(sent_token, admin_token))
 
 @app.route('/')
 def home():
@@ -32,12 +58,43 @@ def home():
 
 @app.route('/api/services')
 def services():
-    services_list = [
-        {'name': 'شت اول', 'description': 'توضیح خدمت اول'},
-        {'name': 'شت دوم', 'description': 'توضیح خدمت دوم'},
-        {'name': 'شت سوم', 'description': 'توضیح خدمت سوم'}
-    ]
+    conn = sqlite3.connect('messages.db')
+    conn.row_factory = sqlite3.Row
+    rows = conn.execute('SELECT * FROM services').fetchall()
+    conn.close()
+    services_list = [dict(row) for row in rows]
     return jsonify(services_list)
+
+@app.route('/api/services', methods=['POST'])
+def add_service():
+    if not is_admin():
+        return jsonify({'error': 'unauthorized'}), 401
+
+    data = request.get_json(silent=True)
+    if not isinstance(data, dict):
+        return jsonify({'error': 'داده‌ی ارسالی معتبر نیست.'}), 400
+
+    title = data.get('title')
+    description = data.get('description')
+
+    if not isinstance(title, str) or not title.strip():
+        return jsonify({'error': 'عنوان نباید خالی باشد.'}), 400
+    if not isinstance(description, str) or not description.strip():
+        return jsonify({'error': 'توضیحات نباید خالی باشد.'}), 400
+
+    title = title.strip()
+    description = description.strip()
+
+    conn = sqlite3.connect('messages.db')
+    cursor = conn.execute(
+        'INSERT INTO services (title, description) VALUES (?, ?)',
+        (title, description)
+    )
+    conn.commit()
+    new_id = cursor.lastrowid
+    conn.close()
+
+    return jsonify({'id': new_id, 'title': title, 'description': description}), 201
 
 @app.route('/api/about')
 def about():
