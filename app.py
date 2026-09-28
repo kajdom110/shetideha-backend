@@ -1,6 +1,8 @@
 from flask import Flask, jsonify, request
 from flask_cors import CORS
 import sqlite3
+import os
+import hmac
 
 app = Flask(__name__)
 CORS(app)
@@ -56,6 +58,13 @@ def contact():
 
 @app.route('/api/messages')
 def get_messages():
+    admin_token = os.environ.get('ADMIN_TOKEN')
+    sent_token = request.headers.get('X-Admin-Token')
+
+    # If ADMIN_TOKEN isn't set, deny everyone instead of letting a missing header match it
+    if not admin_token or not sent_token or not hmac.compare_digest(sent_token, admin_token):
+        return jsonify({'error': 'unauthorized'}), 401
+
     conn = sqlite3.connect('messages.db')
     conn.row_factory = sqlite3.Row
     rows = conn.execute('SELECT * FROM messages').fetchall()
