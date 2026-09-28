@@ -3,8 +3,12 @@ from flask_cors import CORS
 import sqlite3
 import os
 import hmac
+import re
 
 app = Flask(__name__)
+
+# something@something.something, with no spaces
+EMAIL_PATTERN = re.compile(r'^[^\s@]+@[^\s@]+\.[^\s@]+$')
 CORS(app)
 
 def init_db():
@@ -41,10 +45,25 @@ def about():
 
 @app.route('/api/contact', methods=['POST'])
 def contact():
-    data = request.get_json()
+    # silent=True: a missing or invalid JSON body becomes None instead of an error
+    data = request.get_json(silent=True)
+    if not isinstance(data, dict):
+        return jsonify({'error': 'داده‌ی ارسالی معتبر نیست.'}), 400
+
     name = data.get('name')
     email = data.get('email')
     message = data.get('message')
+
+    if not isinstance(name, str) or not name.strip():
+        return jsonify({'error': 'نام نباید خالی باشد.'}), 400
+    if not isinstance(email, str) or not EMAIL_PATTERN.match(email.strip()):
+        return jsonify({'error': 'ایمیل معتبر نیست.'}), 400
+    if not isinstance(message, str) or not message.strip():
+        return jsonify({'error': 'پیام نباید خالی باشد.'}), 400
+
+    name = name.strip()
+    email = email.strip()
+    message = message.strip()
 
     conn = sqlite3.connect('messages.db')
     conn.execute(
