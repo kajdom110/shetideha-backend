@@ -33,6 +33,10 @@ def services():
     ]
     return jsonify(services_list)
 
+@app.route('/api/about')
+def about():
+    return jsonify({'message': 'ما یک کسب‌وکار کوچک هستیم که با تمرکز بر کیفیت و رضایت مشتری، خدمات خود را ارائه می‌دهیم.'})
+
 @app.route('/api/contact', methods=['POST'])
 def contact():
     data = request.get_json()
