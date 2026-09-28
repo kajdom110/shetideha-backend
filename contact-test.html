@@ -21,14 +21,14 @@
       const email = document.getElementById('email').value;
       const message = document.getElementById('message').value;
 
-      fetch('http://127.0.0.1:5000/api/contact', {
+      fetch('http://127.0.0.1:5001/api/contact', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ name: name, email: email, message: message })
       })
         .then(function (response) { return response.json(); })
         .then(function (data) {
-          document.getElementById('result').textContent = data.message;
+          document.getElementById('result').textContent = data.error || data.message;
         });
     });
   </script>
