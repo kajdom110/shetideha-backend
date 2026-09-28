@@ -22,7 +22,7 @@ init_db()
 
 @app.route('/')
 def home():
-    return 'سلام! این پیام از بک‌اند شما می‌آید.'
+    return 'سلام! این نسخه‌ی به‌روزرسانی‌شده‌ی بک‌اند است.'
 
 @app.route('/api/services')
 def services():
