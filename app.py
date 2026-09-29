@@ -96,6 +96,56 @@ def add_service():
 
     return jsonify({'id': new_id, 'title': title, 'description': description}), 201
 
+@app.route('/api/services/<int:service_id>', methods=['PUT'])
+def update_service(service_id):
+    if not is_admin():
+        return jsonify({'error': 'unauthorized'}), 401
+
+    data = request.get_json(silent=True)
+    if not isinstance(data, dict):
+        return jsonify({'error': 'داده‌ی ارسالی معتبر نیست.'}), 400
+
+    title = data.get('title')
+    description = data.get('description')
+
+    if not isinstance(title, str) or not title.strip():
+        return jsonify({'error': 'عنوان نباید خالی باشد.'}), 400
+    if not isinstance(description, str) or not description.strip():
+        return jsonify({'error': 'توضیحات نباید خالی باشد.'}), 400
+
+    title = title.strip()
+    description = description.strip()
+
+    conn = sqlite3.connect('messages.db')
+    cursor = conn.execute(
+        'UPDATE services SET title = ?, description = ? WHERE id = ?',
+        (title, description, service_id)
+    )
+    conn.commit()
+    updated = cursor.rowcount
+    conn.close()
+
+    if updated == 0:
+        return jsonify({'error': 'خدمتی با این شناسه پیدا نشد.'}), 404
+
+    return jsonify({'id': service_id, 'title': title, 'description': description})
+
+@app.route('/api/services/<int:service_id>', methods=['DELETE'])
+def delete_service(service_id):
+    if not is_admin():
+        return jsonify({'error': 'unauthorized'}), 401
+
+    conn = sqlite3.connect('messages.db')
+    cursor = conn.execute('DELETE FROM services WHERE id = ?', (service_id,))
+    conn.commit()
+    deleted = cursor.rowcount
+    conn.close()
+
+    if deleted == 0:
+        return jsonify({'error': 'خدمتی با این شناسه پیدا نشد.'}), 404
+
+    return jsonify({'status': 'success', 'message': 'خدمت حذف شد.'})
+
 @app.route('/api/about')
 def about():
     return jsonify({'message': 'ما یک کسب‌وکار کوچک هستیم که با تمرکز بر کیفیت و رضایت مشتری، خدمات خود را ارائه می‌دهیم.'})
