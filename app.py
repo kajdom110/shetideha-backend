@@ -4,6 +4,7 @@ import sqlite3
 import os
 import hmac
 import re
+from werkzeug.security import check_password_hash
 
 app = Flask(__name__)
 
@@ -197,6 +198,35 @@ def get_messages():
     conn.close()
     messages = [dict(row) for row in rows]
     return jsonify(messages)
+
+@app.route('/api/login', methods=['POST'])
+def login():
+    error = jsonify({'error': 'نام‌کاربری یا رمز اشتباه است.'}), 401
+
+    admin_username = os.environ.get('ADMIN_USERNAME')
+    admin_password_hash = os.environ.get('ADMIN_PASSWORD_HASH')
+    admin_token = os.environ.get('ADMIN_TOKEN')
+
+    # If any of these isn't set, deny everyone
+    if not admin_username or not admin_password_hash or not admin_token:
+        return error
+
+    data = request.get_json(silent=True)
+    if not isinstance(data, dict):
+        return error
+
+    username = data.get('username')
+    password = data.get('password')
+    if not isinstance(username, str) or not isinstance(password, str):
+        return error
+
+    # Compare as bytes so non-ASCII usernames work with compare_digest
+    username_ok = hmac.compare_digest(username.encode(), admin_username.encode())
+    password_ok = check_password_hash(admin_password_hash, password)
+    if not (username_ok and password_ok):
+        return error
+
+    return jsonify({'token': admin_token})
 
 if __name__ == '__main__':
     app.run(debug=True, port=5001)
